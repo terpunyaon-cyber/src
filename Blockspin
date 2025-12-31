@@ -162,6 +162,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+
 
 -- ====== Settings ======
 local SilentAimEnabled = false
@@ -343,3 +345,6 @@ CombatTab:Dropdown({
 		end
 	end
 })
+
+
+

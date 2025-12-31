@@ -276,6 +276,8 @@ CombatTab:Dropdown({
 	end
 })
 
+local WeaponTab = Window:Tab({Title = "Main", Icon = "user"})
+
 local GunModSettings = {
     Enabled = false,
     accuracy = math.huge,

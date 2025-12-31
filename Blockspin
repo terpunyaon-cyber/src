@@ -630,10 +630,7 @@ local FireRateAttributeName = "fire_rate"
 local AutomaticAttributeName = "automatic"
 
 
-local CurrentGunLabel = WeaponTab:Button({
-    Title = "Current Gun",
-    Desc = "None"
-})
+
 
 
 local function FindFireRateAttribute(gun)

@@ -87,22 +87,25 @@ end)
 local MainTab = Window:Tab({Title = "Main", Icon = "user"})
 
 
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local SilentAimEnabled = true      
-local TracerEnabled   = true       
-local ShowFOV         = false      
-local FOV             = 150        
+-- Settings
+local SilentAimEnabled = true
+local TracerEnabled = true
+local ShowFOV = false
+local FOV = 150
 
 local GunNames = {
 	"P226","MP5","M24","Draco","Glock","Sawnoff","Uzi","G3","C9",
 	"Hunting Rifle","Anaconda","AK47","Remington","Double Barrel"
 }
 
+-- Drawing
 local fovCircle = Drawing.new("Circle")
 fovCircle.Color = Color3.fromRGB(255,255,255)
 fovCircle.Thickness = 2
@@ -116,6 +119,7 @@ tracerLine.Color = Color3.fromRGB(255,0,0)
 tracerLine.Thickness = 2
 tracerLine.Visible = false
 
+-- Target functions
 local function GetClosestTarget()
 	local closest, shortest = nil, math.huge
 	local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
@@ -150,6 +154,7 @@ local function IsHoldingAllowedGun(args)
 	return false
 end
 
+-- Remote hook
 local send = ReplicatedStorage.Remotes.Send
 local oldFire
 oldFire = hookfunction(send.FireServer, function(self, ...)
@@ -163,6 +168,7 @@ oldFire = hookfunction(send.FireServer, function(self, ...)
 	return oldFire(self, unpack(args))
 end)
 
+-- Render loop
 RunService.RenderStepped:Connect(function()
 	fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 	fovCircle.Radius = FOV
@@ -182,19 +188,6 @@ RunService.RenderStepped:Connect(function()
 	tracerLine.Visible = false
 end)
 
-local MainSection = MainTab:Section({Title = "Silent Aim"})
-
-MainSection:Toggle({Title="Silent Aim",Default=SilentAimEnabled,Callback=function(v) SilentAimEnabled=v end})
-MainSection:Toggle({Title="Show FOV",Default=ShowFOV,Callback=function(v) ShowFOV=v end})
-MainSection:Toggle({Title="Tracer Line",Default=TracerEnabled,Callback=function(v) TracerEnabled=v end})
-
-MainSection:Slider({
-	Title="FOV Size",
-	Step=1,
-	Value={Min=50,Max=500,Default=FOV},
-	Callback=function(v) FOV=v end
-})
-
 local function GetPlayerNames()
 	local t={}
 	for _,p in pairs(Players:GetPlayers()) do
@@ -203,16 +196,69 @@ local function GetPlayerNames()
 	return t
 end
 
-MainSection:Dropdown({
-	Title="Save Friend",
-	Values=GetPlayerNames(),
-	Multi=true,
-	Default={},
-	Callback=function(sel)
-		for _,p in pairs(Players:GetPlayers()) do p:SetAttribute("SilentAimIgnore",false) end
-		for _,n in pairs(sel) do
-			local p=Players:FindFirstChild(n)
-			if p then p:SetAttribute("SilentAimIgnore",true) end
-		end
-	end
+local ToggleSilent = Tab:Toggle({
+    Title = "Silent Aim",
+    Desc = "Auto lock head when shooting",
+    Icon = "crosshair",
+    Type = "Checkbox",
+    Value = SilentAimEnabled,
+    Callback = function(state)
+        SilentAimEnabled = state
+    end
+})
+
+local ToggleFOV = Tab:Toggle({
+    Title = "Show FOV",
+    Desc = "Show aim circle",
+    Icon = "circle",
+    Type = "Checkbox",
+    Value = ShowFOV,
+    Callback = function(state)
+        ShowFOV = state
+    end
+})
+
+local ToggleTracer = Tab:Toggle({
+    Title = "Tracer Line",
+    Desc = "Show line to target",
+    Icon = "navigation",
+    Type = "Checkbox",
+    Value = TracerEnabled,
+    Callback = function(state)
+        TracerEnabled = state
+    end
+})
+
+local SliderFOV = Tab:Slider({
+    Title = "FOV Size",
+    Desc = "Aim radius",
+    Step = 1,
+    Value = {
+        Min = 50,
+        Max = 500,
+        Default = FOV
+    },
+    Callback = function(value)
+        FOV = value
+    end
+})
+
+local DropdownFriend = Tab:Dropdown({
+    Title = "Save Friend",
+    Desc = "Ignore selected players",
+    Values = GetPlayerNames(),
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option)
+        for _, plr in pairs(Players:GetPlayers()) do
+            plr:SetAttribute("SilentAimIgnore", false)
+        end
+        for _, name in pairs(option) do
+            local p = Players:FindFirstChild(name)
+            if p then
+                p:SetAttribute("SilentAimIgnore", true)
+            end
+        end
+    end
 })

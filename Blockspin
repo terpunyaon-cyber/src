@@ -1,32 +1,109 @@
--- Services
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Load WindUI
+
+local SplashGui = Instance.new("ScreenGui")
+SplashGui.Name = "QualitySplash"
+SplashGui.IgnoreGuiInset = true
+SplashGui.ResetOnSpawn = false
+SplashGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local BG = Instance.new("Frame")
+BG.Size = UDim2.fromScale(1, 1)
+BG.BackgroundColor3 = Color3.fromRGB(40, 140, 255) -- ฟ้า
+BG.BackgroundTransparency = 1
+BG.Parent = SplashGui
+
+local Logo = Instance.new("ImageLabel")
+Logo.Size = UDim2.fromScale(0.25, 0.25)
+Logo.Position = UDim2.fromScale(0.5, 0.42)
+Logo.AnchorPoint = Vector2.new(0.5, 0.5)
+Logo.BackgroundTransparency = 1
+Logo.Image = "rbxassetid://138614699274576"
+Logo.ImageTransparency = 1
+Logo.Parent = BG
+
+local Text = Instance.new("TextLabel")
+Text.Size = UDim2.fromScale(1, 0.1)
+Text.Position = UDim2.fromScale(0.5, 0.62)
+Text.AnchorPoint = Vector2.new(0.5, 0.5)
+Text.BackgroundTransparency = 1
+Text.Text = "Quality dek gen z"
+Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+Text.TextScaled = true
+Text.Font = Enum.Font.GothamBold
+Text.TextTransparency = 1
+Text.Parent = BG
+
+
+TweenService:Create(BG, TweenInfo.new(0.4), {
+    BackgroundTransparency = 0
+}):Play()
+
+TweenService:Create(Logo, TweenInfo.new(0.6), {
+    ImageTransparency = 0
+}):Play()
+
+TweenService:Create(Text, TweenInfo.new(0.6), {
+    TextTransparency = 0
+}):Play()
+
+task.wait(2)
+
+
+TweenService:Create(BG, TweenInfo.new(0.4), {
+    BackgroundTransparency = 1
+}):Play()
+
+TweenService:Create(Logo, TweenInfo.new(0.4), {
+    ImageTransparency = 1
+}):Play()
+
+TweenService:Create(Text, TweenInfo.new(0.4), {
+    TextTransparency = 1
+}):Play()
+
+task.wait(0.5)
+SplashGui:Destroy()
+
+
 local WindUI = loadstring(game:HttpGet(
     "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
 ))()
 
--- สร้างหน้าต่างหลักธีมม่วง
 local Window = WindUI:CreateWindow({
-    Title = "ERROR HUB",
-    Icon = "rbxassetid://108455308252343", 
-    Author = "",
-    Folder = "ERROR HUB",
-    Size = UDim2.fromOffset(450, 330),
-    Theme = "Violet", 
+    Title = "ERROR HUB [ Test ]",
+    Icon = "rbxassetid://138614699274576",
+    Author = "Seesa",
+    Folder = "MySuperHub",
+    Size = UDim2.fromOffset(580, 460),
+    MinSize = Vector2.new(560, 350),
+    MaxSize = Vector2.new(850, 560),
     Transparent = true,
+    Theme = "Dark",
     Resizable = true,
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Name = LocalPlayer.Name,
+        Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId,
+        Callback = function() end,
+    },
 })
 
-Window:EditOpenButton({ Enabled = false }) 
+Window:EditOpenButton({ Enabled = false })
 
 local ScreenGui = Instance.new("ScreenGui")
 local ToggleBtn = Instance.new("ImageButton")
-local UICorner = Instance.new("UICorner") 
 
 ScreenGui.Name = "WindUI_Toggle"
 ScreenGui.ResetOnSpawn = false
@@ -34,15 +111,11 @@ ScreenGui.Parent = CoreGui
 
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
 ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- สีม่วงเข้ากับธีม
-ToggleBtn.BackgroundTransparency = 0
-ToggleBtn.Image = "rbxassetid://108455308252343" -- โลโก้
+ToggleBtn.BackgroundTransparency = 1
+ToggleBtn.Image = "rbxassetid://138614699274576" 
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 ToggleBtn.Parent = ScreenGui
-
-UICorner.CornerRadius = UDim.new(0, 12) 
-UICorner.Parent = ToggleBtn
 
 local opened = true
 
@@ -81,184 +154,3 @@ UserInputService.InputBegan:Connect(function(input, gp)
         toggle()
     end
 end)
-
-
-
-local MainTab = Window:Tab({Title = "Main", Icon = "user"})
-
-
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
--- Settings
-local SilentAimEnabled = true
-local TracerEnabled = true
-local ShowFOV = false
-local FOV = 150
-
-local GunNames = {
-	"P226","MP5","M24","Draco","Glock","Sawnoff","Uzi","G3","C9",
-	"Hunting Rifle","Anaconda","AK47","Remington","Double Barrel"
-}
-
--- Drawing
-local fovCircle = Drawing.new("Circle")
-fovCircle.Color = Color3.fromRGB(255,255,255)
-fovCircle.Thickness = 2
-fovCircle.NumSides = 100
-fovCircle.Filled = false
-fovCircle.Visible = ShowFOV
-fovCircle.Radius = FOV
-
-local tracerLine = Drawing.new("Line")
-tracerLine.Color = Color3.fromRGB(255,0,0)
-tracerLine.Thickness = 2
-tracerLine.Visible = false
-
--- Target functions
-local function GetClosestTarget()
-	local closest, shortest = nil, math.huge
-	local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-	for _, plr in pairs(Players:GetPlayers()) do
-		if plr ~= LocalPlayer and not plr:GetAttribute("SilentAimIgnore")
-		and plr.Character and plr.Character:FindFirstChild("Head") then
-			local pos, on = Camera:WorldToViewportPoint(plr.Character.Head.Position)
-			if on then
-				local dist = (Vector2.new(pos.X,pos.Y)-center).Magnitude
-				if dist < FOV and dist < shortest then
-					shortest = dist
-					closest = plr
-				end
-			end
-		end
-	end
-	return closest
-end
-
-local function IsHoldingAllowedGun(args)
-	local ok, weapon = pcall(function() return args[3] end)
-	if ok and typeof(weapon)=="Instance" and table.find(GunNames, weapon.Name) then
-		return true
-	end
-	if LocalPlayer.Character then
-		for _,v in pairs(LocalPlayer.Character:GetChildren()) do
-			if (v:IsA("Tool") or v:IsA("Model")) and table.find(GunNames, v.Name) then
-				return true
-			end
-		end
-	end
-	return false
-end
-
--- Remote hook
-local send = ReplicatedStorage.Remotes.Send
-local oldFire
-oldFire = hookfunction(send.FireServer, function(self, ...)
-	local args = {...}
-	if SilentAimEnabled and IsHoldingAllowedGun(args) then
-		local t = GetClosestTarget()
-		if t and t.Character and t.Character:FindFirstChild("Head") then
-			args[5] = { [1] = { [1] = { Instance = t.Character.Head, Position = t.Character.Head.Position } } }
-		end
-	end
-	return oldFire(self, unpack(args))
-end)
-
--- Render loop
-RunService.RenderStepped:Connect(function()
-	fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-	fovCircle.Radius = FOV
-	fovCircle.Visible = ShowFOV
-	local t = GetClosestTarget()
-	if TracerEnabled and t and t.Character and t.Character:FindFirstChild("Head")
-	and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-		local tPos,tOn = Camera:WorldToViewportPoint(t.Character.Head.Position)
-		local mPos,mOn = Camera:WorldToViewportPoint(LocalPlayer.Character.Head.Position)
-		if tOn and mOn then
-			tracerLine.From = Vector2.new(mPos.X,mPos.Y)
-			tracerLine.To = Vector2.new(tPos.X,tPos.Y)
-			tracerLine.Visible = true
-			return
-		end
-	end
-	tracerLine.Visible = false
-end)
-
-local function GetPlayerNames()
-	local t={}
-	for _,p in pairs(Players:GetPlayers()) do
-		if p~=LocalPlayer then table.insert(t,p.Name) end
-	end
-	return t
-end
-
-local ToggleSilent = Tab:Toggle({
-    Title = "Silent Aim",
-    Desc = "Auto lock head when shooting",
-    Icon = "crosshair",
-    Type = "Checkbox",
-    Value = SilentAimEnabled,
-    Callback = function(state)
-        SilentAimEnabled = state
-    end
-})
-
-local ToggleFOV = Tab:Toggle({
-    Title = "Show FOV",
-    Desc = "Show aim circle",
-    Icon = "circle",
-    Type = "Checkbox",
-    Value = ShowFOV,
-    Callback = function(state)
-        ShowFOV = state
-    end
-})
-
-local ToggleTracer = Tab:Toggle({
-    Title = "Tracer Line",
-    Desc = "Show line to target",
-    Icon = "navigation",
-    Type = "Checkbox",
-    Value = TracerEnabled,
-    Callback = function(state)
-        TracerEnabled = state
-    end
-})
-
-local SliderFOV = Tab:Slider({
-    Title = "FOV Size",
-    Desc = "Aim radius",
-    Step = 1,
-    Value = {
-        Min = 50,
-        Max = 500,
-        Default = FOV
-    },
-    Callback = function(value)
-        FOV = value
-    end
-})
-
-local DropdownFriend = Tab:Dropdown({
-    Title = "Save Friend",
-    Desc = "Ignore selected players",
-    Values = GetPlayerNames(),
-    Value = {},
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option)
-        for _, plr in pairs(Players:GetPlayers()) do
-            plr:SetAttribute("SilentAimIgnore", false)
-        end
-        for _, name in pairs(option) do
-            local p = Players:FindFirstChild(name)
-            if p then
-                p:SetAttribute("SilentAimIgnore", true)
-            end
-        end
-    end
-})

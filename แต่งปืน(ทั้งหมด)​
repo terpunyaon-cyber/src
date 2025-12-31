@@ -1,0 +1,401 @@
+local GunModSettings = {
+    Enabled = false,
+    accuracy = math.huge,
+    range = math.huge,
+    Recoil = 0,
+    fire_rate = math.huge,
+    reload_time = 0,
+    automatic = true
+}
+
+
+local FireRateAttributeName = "fire_rate"
+local AutomaticAttributeName = "automatic"
+
+
+local CurrentGunLabel = WeaponTab:Button({
+    Title = "Current Gun",
+    Desc = "None"
+})
+
+
+local function FindFireRateAttribute(gun)
+    if not gun then return nil end
+    
+    
+    if gun:GetAttribute("fire_rate") ~= nil then
+        return "fire_rate"
+    end
+    
+    
+    for attrName, attrValue in pairs(gun:GetAttributes()) do
+        if type(attrName) == "string" and attrName:sub(-3) == "486" then
+            return attrName
+        end
+    end
+    
+    return nil
+end
+
+
+local function FindAutomaticAttribute(gun)
+    if not gun then return nil end
+    
+    
+    if gun:GetAttribute("automatic") ~= nil then
+        return "automatic"
+    end
+    
+    
+    for attrName, attrValue in pairs(gun:GetAttributes()) do
+        if type(attrName) == "string" and attrName:sub(-3) == "492" then
+            return attrName
+        end
+    end
+    
+    return nil
+end
+
+
+local function IsGun(tool)
+    if not tool or not tool:IsA("Tool") then return false end
+    return tool:GetAttribute("reload_time") or tool:GetAttribute("AmmoType") or FindFireRateAttribute(tool)
+end
+
+
+local function ModifyGunAttributes(gun)
+    if not gun or not gun:IsA("Tool") then
+        return false
+    end
+    
+    pcall(function()
+        gun:SetAttribute("accuracy", GunModSettings.accuracy)
+        gun:SetAttribute("range", GunModSettings.range)
+        gun:SetAttribute("Recoil", GunModSettings.Recoil)
+        gun:SetAttribute("reload_time", GunModSettings.reload_time)
+        
+        
+        local fireRateAttr = FindFireRateAttribute(gun)
+        if fireRateAttr then
+            gun:SetAttribute(fireRateAttr, GunModSettings.fire_rate)
+            FireRateAttributeName = fireRateAttr
+        else
+            gun:SetAttribute("fire_rate", GunModSettings.fire_rate)
+        end
+        
+        
+        local automaticAttr = FindAutomaticAttribute(gun)
+        if automaticAttr then
+            gun:SetAttribute(automaticAttr, GunModSettings.automatic)
+            AutomaticAttributeName = automaticAttr
+        else
+            gun:SetAttribute("automatic", GunModSettings.automatic)
+        end
+    end)
+    
+    return true
+end
+
+
+local function ModAllGunsInBackpack()
+    local count = 0
+    for _, tool in pairs(Backpack:GetChildren()) do
+        if IsGun(tool) then
+            ModifyGunAttributes(tool)
+            count = count + 1
+        end
+    end
+    return count
+end
+
+
+local function ModEquippedGun()
+    local char = Client.Character
+    if not char then return false end
+    
+    local tool = char:FindFirstChildOfClass("Tool")
+    if tool and IsGun(tool) then
+        ModifyGunAttributes(tool)
+        CurrentGunLabel:SetDesc(tool.Name)
+        return true
+    end
+    return false
+end
+
+
+local RealtimeConnections = {}
+
+local function StartRealtimeMonitor(gun)
+    if not gun or RealtimeConnections[gun] then return end
+    
+    local fireRateAttr = FindFireRateAttribute(gun)
+    if not fireRateAttr then return end
+    
+     
+    local connection = gun:GetAttributeChangedSignal(fireRateAttr):Connect(function()
+        if GunModSettings.Enabled then
+            local currentValue = gun:GetAttribute(fireRateAttr)
+            
+            
+            if currentValue ~= math.huge and currentValue ~= GunModSettings.fire_rate then
+                gun:SetAttribute(fireRateAttr, GunModSettings.fire_rate)
+            end
+        end
+    end)
+    
+    RealtimeConnections[gun] = connection
+end
+
+local function StopRealtimeMonitor(gun)
+    if RealtimeConnections[gun] then
+        RealtimeConnections[gun]:Disconnect()
+        RealtimeConnections[gun] = nil
+    end
+end
+
+local function StopAllRealtimeMonitors()
+    for gun, connection in pairs(RealtimeConnections) do
+        connection:Disconnect()
+    end
+    RealtimeConnections = {}
+end
+
+
+local BackpackConnection = nil
+local CharacterConnection = nil
+local RealtimeUpdateLoop = nil
+
+local function StartAutoMod()
+    
+    if BackpackConnection then
+        BackpackConnection:Disconnect()
+    end
+    if CharacterConnection then
+        CharacterConnection:Disconnect()
+    end
+    if RealtimeUpdateLoop then
+        RealtimeUpdateLoop:Disconnect()
+    end
+    
+    StopAllRealtimeMonitors()
+    
+    
+    local count = ModAllGunsInBackpack()
+    
+    
+    local equipped = ModEquippedGun()
+    
+    
+    for _, tool in pairs(Backpack:GetChildren()) do
+        if IsGun(tool) then
+            StartRealtimeMonitor(tool)
+        end
+    end
+    
+    local char = Client.Character
+    if char then
+        local equippedTool = char:FindFirstChildOfClass("Tool")
+        if equippedTool and IsGun(equippedTool) then
+            StartRealtimeMonitor(equippedTool)
+        end
+    end
+    
+    if count > 0 or equipped then
+        WindUI:Notify({
+            Title = "Gun Mod",
+            Content = "Modified " .. count .. " gun(s) + Realtime active",
+            Duration = 2
+        })
+    else
+        CurrentGunLabel:SetDesc("No Gun Found")
+    end
+    
+    
+    BackpackConnection = Backpack.ChildAdded:Connect(function(tool)
+        if GunModSettings.Enabled and IsGun(tool) then
+            task.wait(0.05)
+            ModifyGunAttributes(tool)
+            StartRealtimeMonitor(tool)
+        end
+    end)
+    
+    
+    local char = Client.Character
+    if char then
+        CharacterConnection = char.ChildAdded:Connect(function(tool)
+            if GunModSettings.Enabled and IsGun(tool) then
+                task.wait(0.05)
+                ModifyGunAttributes(tool)
+                CurrentGunLabel:SetDesc(tool.Name)
+                StartRealtimeMonitor(tool)
+            end
+        end)
+    end
+    
+    
+    RealtimeUpdateLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        if not GunModSettings.Enabled then return end
+        
+        
+        local char = Client.Character
+        if char then
+            local tool = char:FindFirstChildOfClass("Tool")
+            if tool and IsGun(tool) then
+                ModifyGunAttributes(tool)
+            end
+        end
+        
+        
+        for _, tool in pairs(Backpack:GetChildren()) do
+            if IsGun(tool) then
+                ModifyGunAttributes(tool)
+            end
+        end
+    end)
+end
+
+local function StopAutoMod()
+    if BackpackConnection then
+        BackpackConnection:Disconnect()
+        BackpackConnection = nil
+    end
+    
+    if CharacterConnection then
+        CharacterConnection:Disconnect()
+        CharacterConnection = nil
+    end
+    
+    if RealtimeUpdateLoop then
+        RealtimeUpdateLoop:Disconnect()
+        RealtimeUpdateLoop = nil
+    end
+    
+    StopAllRealtimeMonitors()
+    CurrentGunLabel:SetDesc("None")
+end
+
+--//คอนโทรนกูต้องจำให้ได้​เวลากุมาแก้
+
+
+WeaponTab:Toggle({
+    Title = "Enable Gun Mod",
+    Flag = "gun_mod_enabled",
+    Icon = "check",
+    Type = "Checkbox",
+    Default = false,
+    Callback = function(Value)
+        GunModSettings.Enabled = Value
+        
+        if Value then
+            StartAutoMod()
+            WindUI:Notify({
+                Title = "Gun Mods",
+                Content = "Enabled",
+                Duration = 2
+            })
+        else
+            StopAutoMod()
+            WindUI:Notify({
+                Title = "Quality",
+                Content = "SuccessFully",
+                Duration = 2
+            })
+        end
+    end
+})
+
+WeaponTab:Divider()
+
+
+WeaponTab:Toggle({
+    Title = "Inf Accuracy",
+    Flag = "gun_max_accuracy",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.accuracy = Value and math.huge or 1
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+
+WeaponTab:Toggle({
+    Title = "Inf Range",
+    Flag = "gun_max_range",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.range = Value and math.huge or 100
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+
+WeaponTab:Toggle({
+    Title = "No Recoil",
+    Flag = "gun_no_recoil",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.Recoil = Value and 0 or 1
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+
+WeaponTab:Toggle({
+    Title = "Inf Fire Rate",
+    Flag = "gun_infinite_firerate",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.fire_rate = Value and math.huge or 0.1
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+
+WeaponTab:Toggle({
+    Title = "Min Reload Time",
+    Flag = "gun_min_reload",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.reload_time = Value and 0 or 2
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+
+WeaponTab:Toggle({
+    Title = "Automatic Mode",
+    Flag = "gun_automatic",
+    Icon = "check",
+    Type = "Checkbox",
+    Default = true,
+    Callback = function(Value)
+        GunModSettings.automatic = Value
+        
+        if GunModSettings.Enabled then
+            ModAllGunsInBackpack()
+            ModEquippedGun()
+        end
+    end
+})
+
+WeaponTab:Divider()

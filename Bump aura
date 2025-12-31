@@ -1,0 +1,39 @@
+-- Bump Aura 
+local function BumpAuraLoop()
+    while _G.BumpAura do
+        task.wait(0.1)
+
+        local car = Vechine.get_car_player_is_in()
+        if not car then
+            continue
+        end
+
+        for _, target in CharModule.get_all() do  
+            if target ~= Character then
+                local hrp = target:FindFirstChild("HumanoidRootPart")
+                if hrp and GetDistanceFromRootPart(hrp) < 100 then
+                    
+                    
+                    local Assembly = car.DriverSeat.AssemblyLinearVelocity 
+                                     + Vector3.new(65, 65, 65)
+
+                    Net.send("run_over", car, target, Assembly)
+                end
+            end 
+        end
+    end
+end
+
+
+CarTab:Toggle({
+    Title = "Bump Aura",
+    Flag = "BumpAura",
+    Value = false,
+    Callback = function(Value)
+        _G.BumpAura = Value
+
+        if Value then
+            task.spawn(BumpAuraLoop)
+        end
+    end
+})

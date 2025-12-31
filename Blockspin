@@ -85,6 +85,12 @@ end)
 
 
 local CombatTab = Window:Tab({Title = "Main", Icon = "user"})
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local lp = Players.LocalPlayer
+local cam = workspace.CurrentCamera
 
 local SilentAimEnabled = true      
 local TracerEnabled   = true       

@@ -1,0 +1,102 @@
+local Lighting = game:GetService("Lighting")
+local Terrain = workspace:FindFirstChildOfClass("Terrain")
+
+local function RTX_ON()
+	-- ล้างของเก่า
+	for _, v in ipairs(Lighting:GetChildren()) do
+		if v:IsA("Atmosphere")
+		or v:IsA("BloomEffect")
+		or v:IsA("SunRaysEffect")
+		or v:IsA("ColorCorrectionEffect")
+		or v:IsA("DepthOfFieldEffect")
+		or v:IsA("Sky") then
+			v:Destroy()
+		end
+	end
+
+	
+	local Sky = Instance.new("Sky")
+	Sky.SkyboxBk = "rbxassetid://159454299"
+	Sky.SkyboxDn = "rbxassetid://159454296"
+	Sky.SkyboxFt = "rbxassetid://159454293"
+	Sky.SkyboxLf = "rbxassetid://159454286"
+	Sky.SkyboxRt = "rbxassetid://159454300"
+	Sky.SkyboxUp = "rbxassetid://159454288"
+	Sky.SunAngularSize = 21
+	Sky.Parent = Lighting
+
+	
+	Lighting.Technology = Enum.Technology.Future
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = 1
+	Lighting.Brightness = 3
+	Lighting.ExposureCompensation = 0.25
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.ClockTime = 14
+
+	
+	local Atmosphere = Instance.new("Atmosphere")
+	Atmosphere.Density = 0.35
+	Atmosphere.Offset = 0.25
+	Atmosphere.Color = Color3.fromRGB(190, 210, 255)
+	Atmosphere.Decay = Color3.fromRGB(120, 150, 200)
+	Atmosphere.Glare = 0.35
+	Atmosphere.Haze = 1.2
+	Atmosphere.Parent = Lighting
+
+	
+	local Bloom = Instance.new("BloomEffect")
+	Bloom.Intensity = 1.2
+	Bloom.Size = 56
+	Bloom.Threshold = 0.85
+	Bloom.Parent = Lighting
+
+	
+	local SunRays = Instance.new("SunRaysEffect")
+	SunRays.Intensity = 0.25
+	SunRays.Spread = 0.85
+	SunRays.Parent = Lighting
+
+	
+	local CC = Instance.new("ColorCorrectionEffect")
+	CC.Brightness = 0.05
+	CC.Contrast = 0.25
+	CC.Saturation = 0.35
+	CC.TintColor = Color3.fromRGB(255, 245, 235)
+	CC.Parent = Lighting
+
+	
+	local DOF = Instance.new("DepthOfFieldEffect")
+	DOF.FarIntensity = 0.25
+	DOF.NearIntensity = 0.05
+	DOF.FocusDistance = 60
+	DOF.InFocusRadius = 40
+	DOF.Parent = Lighting
+
+	
+	if Terrain then
+		Terrain.WaterWaveSize = 1
+		Terrain.WaterWaveSpeed = 15
+		Terrain.WaterReflectance = 1
+		Terrain.WaterTransparency = 0.05
+	end
+
+	
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.CastShadow = true
+			if v.Material == Enum.Material.Plastic then
+				v.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	end
+end
+
+MiscTab:Button({
+	Title = "RTX ON",
+	Icon = "sparkles",
+	Callback = function()
+		RTX_ON()
+	end
+})

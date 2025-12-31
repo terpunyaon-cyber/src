@@ -1,0 +1,50 @@
+RunService.RenderStepped:Connect(function(delta)
+    if speedActive and player.Character then
+        local char = player.Character
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if hum and root then
+            local moveDir = hum.MoveDirection
+            if moveDir.Magnitude > 0 then
+                root.CFrame = root.CFrame + moveDir.Unit * walkSpeedMultiplier * delta * 1
+            end
+        end
+    end
+end)
+
+
+local EnabledFlyJump = false
+
+MainTab:Toggle(
+    {
+        Title = "Fly Jump",
+        Flag = "Fly",
+        Icon = "check",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(Value)
+            EnabledFlyJump = Value
+        end
+    }
+)
+
+UserInputService.JumpRequest:Connect(
+    function()
+        if not EnabledFlyJump or not RootPart or not Humanoid then
+            return
+        end
+        holdingJump = true
+        task.spawn(
+            function()
+                while holdingJump and EnabledFlyJump do
+                    RunService.Heartbeat:Wait()
+                    if RootPart then
+                        RootPart.Velocity = Vector3.new(RootPart.Velocity.X, 30, RootPart.Velocity.Z)
+                    else
+                        break
+                    end
+                end
+            end
+        )
+    end
+)

@@ -1,0 +1,40 @@
+local Players = game:GetService("Players")
+local Client = Players.LocalPlayer
+local PlayerGui = Client:WaitForChild("PlayerGui")
+
+local BankBalance =
+    MainTab:Button(
+    {
+        Title = "🏦 Bank Balance",
+        Desc = "N/A"
+    }
+)
+local HandBalance =
+    MainTab:Button(
+    {
+        Title = "💸 Hand Balance",
+        Desc = "N/A"
+    }
+)
+
+local function HandMoney()
+    return tonumber(PlayerGui.TopRightHud.Holder.Frame.MoneyTextLabel.Text:match("%$(%d+)"))
+end
+
+local function ATMMoney()
+    for _, v in ipairs(PlayerGui:GetDescendants()) do
+        if v:IsA("TextLabel") and string.find(v.Text, "Bank Balance") then
+            return tonumber(v.Text:match("%$(%d+)"))
+        end
+    end
+    return 0
+end
+
+task.spawn(
+    function()
+        while task.wait(0.2) do
+            BankBalance:SetDesc('<b><font color="#FFFFFF">$' .. (ATMMoney() or 0) .. "</font></b>")
+            HandBalance:SetDesc('<b><font color="#FFFFFF">$' .. (HandMoney() or 0) .. "</font></b>")
+        end
+    end
+)

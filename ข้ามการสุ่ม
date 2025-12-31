@@ -1,0 +1,26 @@
+local EnabledSkip = false
+
+-- ปุ่ม Toggle
+MiscTab:Toggle({
+    Title = "Skip Animation",
+    Flag = "skip_anim",
+    Value = false,
+    Callback = function(Value)
+        EnabledSkip = Value
+
+        
+        if EnabledSkip then
+            task.spawn(function()
+                while EnabledSkip do
+                    
+                    for _, crate in pairs(CrateController.class.objects) do
+                        
+                        crate.states.open.set(true)       
+                        CrateController.skipping.set(true) 
+                    end
+                    task.wait(0.05) 
+                end
+            end)
+        end
+    end
+})​

@@ -1327,3 +1327,33 @@ MainTab:Slider({
         walkSpeedMultiplier = tonumber(value)
     end
 })
+
+
+local EnabledInfiniteStamina = false
+
+
+MainTab:Toggle(
+    {
+        Title = "Infinite Stamina",
+        Flag = "Inf",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(Value)
+            EnabledInfiniteStamina = Value
+        end
+    }
+)
+
+
+local OldUpdate = SprintBar.update
+
+
+SprintBar.update = function(...)
+    if EnabledInfiniteStamina then
+        
+        return 0.9
+    else
+        
+        return OldUpdate(...)
+    end
+end

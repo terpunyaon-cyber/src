@@ -8,14 +8,14 @@ local LocalPlayer = Players.LocalPlayer
 
 
 local SplashGui = Instance.new("ScreenGui")
-SplashGui.Name = "QualitySplash"
+SplashGui.Name = "ERROR HUBSplash"
 SplashGui.IgnoreGuiInset = true
 SplashGui.ResetOnSpawn = false
 SplashGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local BG = Instance.new("Frame")
 BG.Size = UDim2.fromScale(1, 1)
-BG.BackgroundColor3 = Color3.fromRGB(40, 140, 255) -- ฟ้า
+BG.BackgroundColor3 = Color3.fromRGB(255, 105, 180) -- ฟ้า
 BG.BackgroundTransparency = 1
 BG.Parent = SplashGui
 
@@ -24,7 +24,7 @@ Logo.Size = UDim2.fromScale(0.25, 0.25)
 Logo.Position = UDim2.fromScale(0.5, 0.42)
 Logo.AnchorPoint = Vector2.new(0.5, 0.5)
 Logo.BackgroundTransparency = 1
-Logo.Image = "rbxassetid://138614699274576"
+Logo.Image = "rbxassetid://108455308252343"
 Logo.ImageTransparency = 1
 Logo.Parent = BG
 
@@ -33,7 +33,7 @@ Text.Size = UDim2.fromScale(1, 0.1)
 Text.Position = UDim2.fromScale(0.5, 0.62)
 Text.AnchorPoint = Vector2.new(0.5, 0.5)
 Text.BackgroundTransparency = 1
-Text.Text = "Quality dek gen z"
+Text.Text = "ERROR HUB"
 Text.TextColor3 = Color3.fromRGB(255, 255, 255)
 Text.TextScaled = true
 Text.Font = Enum.Font.GothamBold
@@ -78,9 +78,9 @@ local WindUI = loadstring(game:HttpGet(
 
 local Window = WindUI:CreateWindow({
     Title = "ERROR HUB [ Test ]",
-    Icon = "rbxassetid://138614699274576",
+    Icon = "rbxassetid://108455308252343",
     Author = "Seesa",
-    Folder = "MySuperHub",
+    Folder = "ERROR HUB Op script",
     Size = UDim2.fromOffset(580, 460),
     MinSize = Vector2.new(560, 350),
     MaxSize = Vector2.new(850, 560),
@@ -112,7 +112,7 @@ ScreenGui.Parent = CoreGui
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
 ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
 ToggleBtn.BackgroundTransparency = 1
-ToggleBtn.Image = "rbxassetid://138614699274576" 
+ToggleBtn.Image = "rbxassetid://108455308252343" 
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 ToggleBtn.Parent = ScreenGui
@@ -164,8 +164,8 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 -- ====== Settings ======
-local SilentAimEnabled = true
-local TracerEnabled   = true
+local SilentAimEnabled = false
+local TracerEnabled   = false
 local ShowFOV         = false
 local FOV             = 150
 
@@ -187,8 +187,6 @@ local tracerLine = Drawing.new("Line")
 tracerLine.Color = Color3.fromRGB(255,0,0)
 tracerLine.Thickness = 2
 tracerLine.Visible = false
-
-local CombatTab = Window:Tab({Title = "Main", Icon = "user"})
 
 
 -- ====== Functions ======
@@ -296,7 +294,16 @@ RunService.RenderStepped:Connect(function()
 	tracerLine.Visible = false
 end)
 
--- ====== UI Controls ======
+local CombatTab = Window:Tab({Title = "MAIN", Icon = "user"})
+
+CombatTab:Toggle({
+	Title = "Silent Aim",
+	Default = SilentAimEnabled,
+	Callback = function(v)
+		SilentAimEnabled = v
+	end
+})
+
 CombatTab:Toggle({
 	Title = "Show FOV",
 	Default = ShowFOV,

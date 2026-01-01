@@ -326,6 +326,12 @@ task.spawn(
     end
 )
 
+MainTab:Section(
+    {
+        Title = "Player Modifier:"
+    }
+)
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer

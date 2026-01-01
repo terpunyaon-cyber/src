@@ -809,3 +809,30 @@ SprintBar.update = function(...)
         return OldUpdate(...)
     end
 end
+
+MainTab:Section(
+    {
+        Title = "Invisible:"
+    }
+)
+
+local DesyncButton = MainTab:Button({
+    Title = "Invisible",
+    Locked = false,
+    Callback = function()
+	   Net.send("request_respawn")
+		task.wait(6.1)
+		Net.get("death_screen_request_respawn")
+        setfflag("NextGenReplicatorEnabledWrite4", "true")
+		        WindUI:Notify({
+            Title = "Invisible Success",
+            Duration = 3,
+        })
+    end,
+})
+
+MainTab:Section(
+    {
+        Title = "Snap:"
+    }
+)

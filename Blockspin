@@ -471,51 +471,84 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 
--- ====== Services ======
+-- ====== SERVICES ======
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local Debris = game:GetService("Debris")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 -- ====== SETTINGS ======
 local SilentAimEnabled = false
-local TracerEnabled   = false
-local ShowFOV         = false
-local FOV             = 150
+local TracerEnabled = true 
+local ShowFOV = false
+local FOV = 150
 
 local GunNames = {
 	"P226","MP5","M24","Draco","Glock","Sawnoff","Uzi","G3","C9",
 	"Hunting Rifle","Anaconda","AK47","Remington","Double Barrel"
 }
 
--- ====== FOV ======
+-- ====== FOV CIRCLE ======
 local fovCircle = Drawing.new("Circle")
 fovCircle.Color = Color3.fromRGB(255,255,255)
 fovCircle.Thickness = 2
 fovCircle.NumSides = 100
 fovCircle.Filled = false
 fovCircle.Visible = false
+fovCircle.Radius = FOV
 
--- ====== SCREEN TRACER ======
+-- ====== TRACER (เส้นชี้) ======
 local tracerLine = Drawing.new("Line")
 tracerLine.Color = Color3.fromRGB(255, 60, 180)
-tracerLine.Thickness = 2
+tracerLine.Thickness = 1
+tracerLine.Transparency = 0.8
 tracerLine.Visible = false
 
--- ====== GET TARGET ======
+-- ====== BULLET TRACER (เส้นกระสุน) ======
+local bulletTracers = {}  
+local maxBulletTracers = 15
+local bulletTracerLifetime = 0.2  
+
+local function CreateBulletTracer()
+	local line = Drawing.new("Line")
+	line.Color = Color3.fromRGB(255, 100, 255) 
+	line.Thickness = 2.5  
+	line.Transparency = 0.3
+	line.Visible = true
+	return {
+		Line = line,
+		Created = tick(),
+		From = nil,
+		To = nil
+	}
+end
+
+local function CleanupBulletTracers()
+	local currentTime = tick()
+	for i = #bulletTracers, 1, -1 do
+		local tracer = bulletTracers[i]
+		if currentTime - tracer.Created > bulletTracerLifetime then
+			tracer.Line:Remove()
+			table.remove(bulletTracers, i)
+		end
+	end
+end
+
+-- ====== FUNCTIONS ======
 local function GetClosestTarget()
 	local closest, shortest = nil, math.huge
 	local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 
 	for _, plr in pairs(Players:GetPlayers()) do
-		if plr ~= LocalPlayer and not plr:GetAttribute("SilentAimIgnore")
-			and plr.Character and plr.Character:FindFirstChild("Head") then
+		if plr ~= LocalPlayer
+			and not plr:GetAttribute("SilentAimIgnore")
+			and plr.Character
+			and plr.Character:FindFirstChild("Head") then
 
 			local pos, onScreen = Camera:WorldToViewportPoint(plr.Character.Head.Position)
 			if onScreen then
-				local dist = (Vector2.new(pos.X,pos.Y)-center).Magnitude
+				local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
 				if dist < FOV and dist < shortest then
 					shortest = dist
 					closest = plr
@@ -523,17 +556,51 @@ local function GetClosestTarget()
 			end
 		end
 	end
+
 	return closest
 end
 
-local function IsHoldingAllowedGun()
+local function GetGunMuzzlePosition()
+	if not LocalPlayer.Character then return nil end
+	for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+		if (tool:IsA("Tool") or tool:IsA("Model")) and table.find(GunNames, tool.Name) then
+			-- หา Handle หรือจุดที่กระสุนออก
+			local handle = tool:FindFirstChild("Handle") or tool:FindFirstChild("MainPart")
+			if handle then
+				-- ลองหาจุดที่กระสุนออก (Muzzle หรือ Flash)
+				local muzzle = tool:FindFirstChild("Muzzle") or tool:FindFirstChild("Flash")
+				if muzzle then
+					return muzzle.WorldPosition
+				else
+					-- ถ้าไม่เจอจุด Muzzle ให้ใช้ตำแหน่ง Handle + offset
+					return handle.CFrame * CFrame.new(0, 0, -1.8)  -- offset ออกไปข้างหน้า
+				end
+			end
+		end
+	end
+	
+	return nil
+end
+
+local function IsHoldingAllowedGun(args)
+	local ok, weapon = pcall(function()
+		return args[3]
+	end)
+
+	if ok and typeof(weapon) == "Instance" and table.find(GunNames, weapon.Name) then
+		return true
+	end
+
 	if LocalPlayer.Character then
 		for _, v in pairs(LocalPlayer.Character:GetChildren()) do
-			if (v:IsA("Tool") or v:IsA("Model")) and table.find(GunNames, v.Name) then
+			if (v:IsA("Tool") or v:IsA("Model"))
+				and table.find(GunNames, v.Name) then
 				return true
 			end
 		end
 	end
+
+	return false
 end
 
 -- ====== SILENT AIM HOOK ======
@@ -542,31 +609,31 @@ local oldFire
 oldFire = hookfunction(send.FireServer, function(self, ...)
 	local args = {...}
 
-	if SilentAimEnabled and IsHoldingAllowedGun() then
+	if SilentAimEnabled and IsHoldingAllowedGun(args) then
 		local target = GetClosestTarget()
 		if target and target.Character and target.Character:FindFirstChild("Head") then
 			local head = target.Character.Head
-			args[4] = CFrame.new(9e9,9e9,9e9)
-			args[5] = {{{Instance = head, Position = head.Position}}}
-
-			local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-			local muzzle = tool and (tool:FindFirstChild("Muzzle") or tool:FindFirstChild("Handle"))
-			if muzzle then
-				local origin = muzzle.Position
-				local aimPos = head.Position
-
-				pcall(function()
-					local part = Instance.new("Part")
-					part.Anchored = true
-					part.CanCollide = false
-					part.Size = Vector3.new(0.15, 0.15, (aimPos - origin).Magnitude)
-					part.CFrame = CFrame.new(origin, aimPos) * CFrame.new(0,0,-part.Size.Z/2)
-					part.Material = Enum.Material.Neon
-					part.Transparency = 0.15
-					part.Color = Color3.fromRGB(255,0,255)
-					part.Parent = workspace
-					Debris:AddItem(part, 0.25)
-				end)
+			args[4] = CFrame.new(math.huge, math.huge, math.huge)
+			args[5] = {
+				[1] = {
+					[1] = {
+						Instance = head,
+						Position = head.Position
+					}
+				}
+			}
+			
+			local muzzlePos = GetGunMuzzlePosition()
+			if muzzlePos then
+				local tracer = CreateBulletTracer()
+				tracer.From = muzzlePos
+				tracer.To = head.Position
+				
+				table.insert(bulletTracers, tracer)
+				if #bulletTracers > maxBulletTracers then
+					bulletTracers[1].Line:Remove()
+					table.remove(bulletTracers, 1)
+				end
 			end
 		end
 	end
@@ -574,25 +641,53 @@ oldFire = hookfunction(send.FireServer, function(self, ...)
 	return oldFire(self, unpack(args))
 end)
 
--- ====== DRAW ======
+-- ====== DRAW UPDATE ======
 RunService.RenderStepped:Connect(function()
 	fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 	fovCircle.Radius = FOV
 	fovCircle.Visible = ShowFOV
+	local target = GetClosestTarget()
+	if SilentAimEnabled and TracerEnabled and target
+		and target.Character and target.Character:FindFirstChild("Head")
+		and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
 
-	local t = GetClosestTarget()
-	if SilentAimEnabled and TracerEnabled and t and t.Character and t.Character:FindFirstChild("Head") then
-		local a,b = Camera:WorldToViewportPoint(LocalPlayer.Character.Head.Position)
-		local c,d = Camera:WorldToViewportPoint(t.Character.Head.Position)
-		if b and d then
-			tracerLine.From = Vector2.new(a.X,a.Y)
-			tracerLine.To = Vector2.new(c.X,c.Y)
+		local tPos, tOn = Camera:WorldToViewportPoint(target.Character.Head.Position)
+		local mPos, mOn = Camera:WorldToViewportPoint(LocalPlayer.Character.Head.Position)
+
+		if tOn and mOn then
+			tracerLine.From = Vector2.new(mPos.X, mPos.Y)
+			tracerLine.To   = Vector2.new(tPos.X, tPos.Y)
 			tracerLine.Visible = true
-			return
+		else
+			tracerLine.Visible = false
+		end
+	else
+		tracerLine.Visible = false
+	end
+
+	CleanupBulletTracers()
+	
+	for _, tracer in pairs(bulletTracers) do
+		if tracer.From and tracer.To then
+			local fromPos, fromOn = Camera:WorldToViewportPoint(tracer.From)
+			local toPos, toOn = Camera:WorldToViewportPoint(tracer.To)
+			
+			if fromOn and toOn then
+				tracer.Line.From = Vector2.new(fromPos.X, fromPos.Y)
+				tracer.Line.To = Vector2.new(toPos.X, toPos.Y)
+				
+				-- ทำให้เส้นจางลงเมื่อใกล้หมดอายุ
+				local age = tick() - tracer.Created
+				local alpha = 1 - (age / bulletTracerLifetime)
+				tracer.Line.Transparency = 1 - (alpha * 0.7)
+			else
+				tracer.Line.Visible = false
+			end
 		end
 	end
-	tracerLine.Visible = false
 end)
+
+
 
 
 
@@ -1029,25 +1124,48 @@ Players.PlayerAdded:Connect(createESP)
 local CombatTab = Window:Tab({Title = "MAIN", Icon = "user"})
 
 CombatTab:Toggle({
-	Title="Silent Aim,
-	Default=false,
-	Callback=function(v)
-		SilentAimEnabled=v
-		TracerEnabled=v
+	Title = "Silent Aim",
+	Default = false,
+	Callback = function(v)
+		SilentAimEnabled = v
+		TracerEnabled = v
+		if not v then
+			tracerLine.Visible = false
+			for _, tracer in pairs(bulletTracers) do
+				tracer.Line:Remove()
+			end
+			bulletTracers = {}
+		end
 	end
 })
 
 CombatTab:Toggle({
-	Title="Show FOV",
-	Default=false,
-	Callback=function(v) ShowFOV=v end
+	Title = "Show FOV",
+	Default = ShowFOV,
+	Callback = function(v)
+		ShowFOV = v
+	end
 })
 
 CombatTab:Slider({
-	Title="FOV",
-	Value={Min=50,Max=500,Default=150},
-	Callback=function(v) FOV=v end
+	Title = "FOV Size",
+	Step = 1,
+	Value = {Min = 50, Max = 500, Default = FOV},
+	Callback = function(v)
+		FOV = v
+	end
 })
+
+-- ====== FRIEND IGNORE ======
+local function GetPlayerNames()
+	local t = {}
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer then
+			table.insert(t, plr.Name)
+		end
+	end
+	return t
+end
 
 CombatTab:Dropdown({
 	Title = "Save Friend",

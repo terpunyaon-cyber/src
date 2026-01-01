@@ -836,3 +836,68 @@ MainTab:Section(
         Title = "Snap:"
     }
 )
+
+local EnabledSnapRunning = false
+local SnapThread = nil
+local YoffsetValue = 70
+local func = {}
+
+func["EnabledSnap"] = function()
+    local basePosition = RootPart.Position
+    while EnabledSnapRunning do
+        task.wait()
+        if not EnabledSnapRunning then break end
+        local currentY = RootPart.Position.Y
+        local targetY = basePosition.Y - YoffsetValue
+        local deltaY = targetY - currentY
+        RootPart.CFrame = RootPart.CFrame * CFrame.new(0, deltaY, 0)
+    end
+end
+
+
+local function SetSnapState(value)
+    if EnabledSnapRunning == value then return end
+    EnabledSnapRunning = value
+    if value then
+        if not SnapThread then
+            SnapThread = task.spawn(func["EnabledSnap"])
+        end
+    else
+        SnapThread = nil
+    end
+
+    if MainTab:Get("UndergroundToggle") then
+        MainTab:Get("UndergroundToggle"):SetValue(value)
+    end
+end
+
+
+MainTab:Toggle({
+    Title = "Snap",
+    Value = false,
+    Flag = "UndergroundToggle",
+    Callback = function(value)
+        SetSnapState(value)
+    end
+})
+
+
+MainTab:Keybind({
+    Title = "Snap Keybind",
+    Flag = "snap_keybind",
+    Value = "G",
+    Callback = function()
+        SetSnapState(not EnabledSnapRunning)
+    end
+})
+
+
+MainTab:Slider({
+    Title = "Snap High",
+    Flag = "snap_height",
+    Step = 1,
+    Value = { Min = 1, Max = 50, Default = YoffsetValue },
+    Callback = function(value)
+        YoffsetValue = value
+    end
+})

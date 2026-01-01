@@ -1229,10 +1229,11 @@ CombatTab:Dropdown({
 })
 
 
-CombatTab:Divider()
+
+local GUNTab = Window:Tab({Title = "GUN MOD", Icon = "user"})
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Enable Gun Mod",
     Flag = "gun_mod_enabled",
     Icon = "check",
@@ -1259,10 +1260,10 @@ CombatTab:Toggle({
     end
 })
 
-CombatTab:Divider()
+GUNTab:Divider()
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Inf Accuracy",
     Flag = "gun_max_accuracy",
     Default = true,
@@ -1277,7 +1278,7 @@ CombatTab:Toggle({
 })
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Inf Range",
     Flag = "gun_max_range",
     Default = true,
@@ -1292,7 +1293,7 @@ CombatTab:Toggle({
 })
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "No Recoil",
     Flag = "gun_no_recoil",
     Default = true,
@@ -1307,7 +1308,7 @@ CombatTab:Toggle({
 })
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Inf Fire Rate",
     Flag = "gun_infinite_firerate",
     Default = true,
@@ -1322,7 +1323,7 @@ CombatTab:Toggle({
 })
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Min Reload Time",
     Flag = "gun_min_reload",
     Default = true,
@@ -1337,7 +1338,7 @@ CombatTab:Toggle({
 })
 
 
-CombatTab:Toggle({
+GUNTab:Toggle({
     Title = "Automatic Mode",
     Flag = "gun_automatic",
     Icon = "check",

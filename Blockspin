@@ -1230,7 +1230,7 @@ CombatTab:Dropdown({
 
 
 
-local GUNTab = Window:Tab({Title = "GUN MOD", Icon = "user"})
+local GUNTab = Window:Tab({Title = "GUN MOD", Icon = "sparkle"})
 
 
 GUNTab:Toggle({

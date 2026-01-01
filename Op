@@ -430,7 +430,6 @@ RunService.RenderStepped:Connect(function(delta)
     end
 end)
 
-
 local EnabledFlyJump = false
 
 MainTab:Toggle(
@@ -464,6 +463,28 @@ UserInputService.JumpRequest:Connect(
         )
     end
 )
+
+
+if Humanoid then
+    Humanoid.StateChanged:Connect(
+        function(oldState, newState)
+            
+            if newState ~= Enum.HumanoidStateType.Freefall and newState ~= Enum.HumanoidStateType.Jumping then
+                holdingJump = false
+            end
+        end
+    )
+end
+
+
+UserInputService.InputEnded:Connect(
+    function(input)
+        if input.KeyCode == Enum.KeyCode.Space then
+            holdingJump = false
+        end
+    end
+)
+
 
 local player = Players.LocalPlayer
 local AntiKillEnabled = false

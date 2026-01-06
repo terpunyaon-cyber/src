@@ -1643,6 +1643,125 @@ EspTab:Toggle({
 	end  
 })  
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local DroppedFolder = workspace:WaitForChild("DroppedItems")
+
+local ItemESPs = {}
+local ShowItemESP = false
+
+local BlueColor  = Color3.fromRGB(0,150,255)
+local GreenColor = Color3.fromRGB(0,255,0)
+
+local function getItemColor(item)
+    if item.Name:lower():find("money") then
+        return GreenColor
+    end
+    return BlueColor
+end
+
+local function createItemESP(item)
+    if ItemESPs[item] or not ShowItemESP then return end
+
+    local color = getItemColor(item)
+    local highlights = {}
+    local label
+
+    local function addHighlight(part)
+        local hl = Instance.new("Highlight")
+        hl.Adornee = part
+        hl.FillColor = color
+        hl.OutlineColor = color
+        hl.FillTransparency = 0.8
+        hl.OutlineTransparency = 0
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Enabled = true
+        hl.Parent = part
+        table.insert(highlights, hl)
+    end
+
+    if item:IsA("BasePart") then
+        addHighlight(item)
+    elseif item:IsA("Model") then
+        for _, v in ipairs(item:GetDescendants()) do
+            if v:IsA("BasePart") then
+                addHighlight(v)
+            end
+        end
+    end
+
+    local basePart =
+        item:IsA("BasePart") and item
+        or item.PrimaryPart
+        or item:FindFirstChildWhichIsA("BasePart")
+
+    if basePart then
+        local bb = Instance.new("BillboardGui")
+        bb.Adornee = basePart
+        bb.Size = UDim2.new(0, 55, 0, 9)
+        bb.StudsOffset = Vector3.new(0, basePart.Size.Y/2 + 0.6, 0)
+        bb.AlwaysOnTop = true
+        bb.Parent = basePart
+
+        label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 1
+        label.Text = "[" .. item.Name .. "]"
+        label.Font = Enum.Font.GothamBold
+        label.TextScaled = false
+        label.TextSize = 8
+        label.TextColor3 = color
+        label.TextStrokeTransparency = 0.5
+        label.Visible = true
+        label.Parent = bb
+    end
+
+    ItemESPs[item] = {
+        highlights = highlights,
+        label = label
+    }
+end
+
+local function removeItemESP(item)
+    local data = ItemESPs[item]
+    if not data then return end
+
+    for _, hl in ipairs(data.highlights) do
+        if hl then hl:Destroy() end
+    end
+
+    if data.label and data.label.Parent then
+        data.label.Parent:Destroy()
+    end
+
+    ItemESPs[item] = nil
+end
+
+for _, item in ipairs(DroppedFolder:GetChildren()) do
+    createItemESP(item)
+end
+
+DroppedFolder.ChildAdded:Connect(createItemESP)
+DroppedFolder.ChildRemoved:Connect(removeItemESP)
+
+EspTab:Toggle({
+    Title = "ESP Dropped Items",
+    Desc = "มองไอเท็มดรอบ",
+    Default = false,
+    Callback = function(state)
+        ShowItemESP = state
+        if not state then
+            for item,_ in pairs(ItemESPs) do
+                removeItemESP(item)
+            end
+        else
+            for _,item in ipairs(DroppedFolder:GetChildren()) do
+                createItemESP(item)
+            end
+        end
+    end
+})
+
 local MainTab = Window:Tab({Title = "Player", Icon = "user"})
 
 

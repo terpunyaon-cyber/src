@@ -1,0 +1,53 @@
+local function applyNoclip()
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local parts = workspace:GetPartBoundsInRadius(root.Position, radius)
+    local currentParts = {}
+
+    for _, part in pairs(parts) do
+        if part:IsA("BasePart") and part ~= root then
+            local underFoot = part.Position.Y + part.Size.Y/2 < root.Position.Y
+            if not underFoot then
+                part.CanCollide = false
+                trackedParts[part] = true
+                currentParts[part] = true
+            end
+        end
+    end
+
+    for part,_ in pairs(trackedParts) do
+        if not currentParts[part] then
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+            trackedParts[part] = nil
+        end
+    end
+end
+local accumulator = 0
+RunService.RenderStepped:Connect(function(dt)
+    if not frontNoclip then return end
+    accumulator = accumulator + dt
+    if accumulator >= 0.1 then
+        applyNoclip()
+        accumulator = 0
+    end
+end)
+
+MainTab:Toggle({
+    Title = "Noclip",
+    Desc = "ทะลุกำแพง",
+    Callback = function(state)
+        frontNoclip = state
+        if not frontNoclip then
+            for part,_ in pairs(trackedParts) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+            trackedParts = {}
+        end
+    end
+})

@@ -18,7 +18,7 @@ ServerTab:Section(
     }
 )
 
--- ที่มส่โค้ดเซิฟ
+
 local ServerCode = ""
 
 ServerTab:Input(
@@ -31,7 +31,7 @@ ServerTab:Input(
     }
 )
 
--- ปุ่มใส่โค้ดเซิฟ
+
 ServerTab:Button(
     {
         Title = "Join Code",
